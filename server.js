@@ -32,7 +32,7 @@ const pool = new Pool({
   user: "avnadmin", // Aiven username
   password: "AVNS_iHPjzAKysOgmJvX6g6f", // Aiven password
   database: "defaultdb", // Aiven database name
-  port: 25808, // Default PostgreSQL port
+  port: 18942, // Default PostgreSQL port
   ssl: {
     rejectUnauthorized: true,
     ca: fs.readFileSync("./ca.pem").toString(), // Path to Aiven CA certificate
