@@ -32,7 +32,7 @@ const pool = new Pool({
   user: "avnadmin", // Aiven username
   password: "AVNS_iHPjzAKysOgmJvX6g6f", // Aiven password
   database: "defaultdb", // Aiven database name
-  port: 18942, // Default PostgreSQL port
+  port: 25808, // Default PostgreSQL port
   ssl: {
     rejectUnauthorized: true,
     ca: fs.readFileSync("./ca.pem").toString(), // Path to Aiven CA certificate
@@ -57,6 +57,18 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage: storage });
+
+// Setup email transporter (configure with your email provider)
+const transporter = nodemailer.createTransport({
+  // service: "mail.rstp.org.sz",
+  host: "rstp.org.sz",
+  port: 465,
+  secure: true,
+  auth: {
+    user: "codeforcare@rstp.org.sz",
+    pass: "Sanelisiwe09",
+  },
+});
 
 // User registration endpoint
 app.post("/userRegister", async (req, res) => {
@@ -84,16 +96,124 @@ app.post("/userRegister", async (req, res) => {
       [email, hashedPassword]
     );
 
-    // Successful registration response
-    res
-      .status(201)
-      .json({ message: "User registered successfully", user: result.rows[0] });
+    console.log("Trying to send mail...");
+
+    try {
+      const mailResponse = await transporter.sendMail({
+        from: "codeforcare@rstp.org.sz",
+        to: email,
+        subject: "Hackathon Registration",
+        html: `
+    <div style="font-family: Arial, sans-serif; color: #333;">
+      <table style="width: 100%; background-color: #f5f5f5; padding: 20px;">
+        <tr>
+          <td align="center">
+           <img src="https://firebasestorage.googleapis.com/v0/b/hackathon-7fce3.appspot.com/o/New%20Pepfar%20logo.png?alt=media&token=4564e2b8-fe4c-484e-b241-8a94d0a5af43" alt="Hackathon Logo" style="max-width: 150px; margin-bottom: 20px;  margin-right:30px">
+            <img src="https://firebasestorage.googleapis.com/v0/b/hackathon-7fce3.appspot.com/o/CGHP_Social%20(1).jpg?alt=media&token=60b32285-c08d-4103-a328-df563d95215f" alt="Hackathon Logo" style="max-width: 150px; margin-bottom: 20px; margin-right:30px">
+            <img src="https://firebasestorage.googleapis.com/v0/b/hackathon-7fce3.appspot.com/o/logo%20(1).png?alt=media&token=9b2558c3-97eb-4d02-be0c-da4f5d28a7cf" alt="Hackathon Logo" style="max-width: 80px; margin-bottom: 20px;">
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div style="background-color: white; padding: 20px; border-radius: 10px;">
+              <h2 style="color: #007bff; text-align: center;">Congratulations!</h2>
+              <p style="font-size: 16px; line-height: 1.6;">
+               Congratulations,
+              </p>
+              <p style="font-size: 16px; line-height: 1.6;">
+                You have successfully registred on the Digital Care Hackahon.
+              </p>
+              <p style="font-size: 16px; line-height: 1.6;">
+                Continue filling in the application form and be amongts the best tech innovators!
+              </p>
+              
+              <p style="font-size: 16px; line-height: 1.6; text-align: center;">
+                Good luck, and we look forward to seeing what you build!
+              </p>
+              <p style="font-size: 16px; line-height: 1.6; text-align: center;">
+                Best regards, <br/>
+                <strong>Code for Care Hackathon Team</strong>
+              </p>
+              <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+              <p style="font-size: 12px; color: #888; text-align: center;">
+                If you have any questions, feel free to contact us at 
+                <a href="mailto:codeforcare@rstp.org.sz" style="color: #007bff;">codeforcare@rstp.org.sz</a>.
+              </p>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `,
+      });
+
+      console.log("Email sent successfully:", mailResponse);
+
+      res.status(201).json({
+        message: "User registered successfully and email sent.",
+        user: result.rows[0],
+      });
+    } catch (mailError) {
+      console.error("Error sending email:", mailError);
+
+      res.status(201).json({
+        message: "User registered successfully but email not sent.",
+        user: result.rows[0],
+        emailError: mailError.message,
+      });
+    }
   } catch (error) {
     console.error("Error inserting data:", error);
     // Send a generic error message for security
     res.status(500).json({ error: "Database insertion error" });
   }
 });
+
+// app.post("/userRegister", async (req, res) => {
+//   const { email, password } = req.body;
+
+//   console.log("Reaching here...............");
+
+//   try {
+//     // Check if user already exists
+//     const existingUser = await pool.query(
+//       "SELECT * FROM users WHERE email = $1",
+//       [email]
+//     );
+
+//     if (existingUser.rows.length > 0) {
+//       return res.status(400).json({ error: "User already exists." });
+//     }
+
+//     // Hash the password before storing it
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     // Insert the new user into the database with the hashed password
+//     const result = await pool.query(
+//       "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
+//       [email, hashedPassword]
+//     );
+
+//     console.log("Trying to send mail");
+
+//     await transporter.sendMail({
+//       to: email,
+//       subject: "Hackathon Application",
+//       text: `Congratulations, we have successfully receiced your digital health application. Please stay tuned for updates!`,
+//     });
+
+//     console.log("sent mail");
+
+//     // Successful registration response
+//     res
+//       .status(201)
+//       .json({ message: "User registered successfully", user: result.rows[0] });
+//   } catch (error) {
+//     console.error("Error inserting data:", error);
+//     // Send a generic error message for security
+//     res.status(500).json({ error: "Database insertion error" });
+//   }
+// });
 
 app.post("/userLogin", async (req, res) => {
   const { email, password } = req.body;
@@ -213,6 +333,76 @@ app.post("/Application", async (req, res) => {
       ]
     );
 
+    try {
+      const mailResponse = await transporter.sendMail({
+        from: "codeforcare@rstp.org.sz",
+        to: email,
+        subject: "Congratulations!",
+        html: `
+    <div style="font-family: Arial, sans-serif; color: #333;">
+      <table style="width: 100%; background-color: #f5f5f5; padding: 20px;">
+        <tr>
+          <td align="center">
+           <img src="https://firebasestorage.googleapis.com/v0/b/hackathon-7fce3.appspot.com/o/New%20Pepfar%20logo.png?alt=media&token=4564e2b8-fe4c-484e-b241-8a94d0a5af43" alt="Hackathon Logo" style="max-width: 150px; margin-bottom: 20px;  margin-right:30px">
+            <img src="https://firebasestorage.googleapis.com/v0/b/hackathon-7fce3.appspot.com/o/CGHP_Social%20(1).jpg?alt=media&token=60b32285-c08d-4103-a328-df563d95215f" alt="Hackathon Logo" style="max-width: 150px; margin-bottom: 20px; margin-right:30px">
+            <img src="https://firebasestorage.googleapis.com/v0/b/hackathon-7fce3.appspot.com/o/logo%20(1).png?alt=media&token=9b2558c3-97eb-4d02-be0c-da4f5d28a7cf" alt="Hackathon Logo" style="max-width: 80px; margin-bottom: 20px;">
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div style="background-color: white; padding: 20px; border-radius: 10px;">
+              <h2 style="color: #007bff; text-align: center;">Congratulations!</h2>
+              <p style="font-size: 16px; line-height: 1.6;">
+                Dear Participant,
+              </p>
+              <p style="font-size: 16px; line-height: 1.6;">
+                We are excited to confirm that your application for the Digital Health Hackathon <strong>"Code for Care Hackathon"</strong>has been successfully received. You will have the opportunity to develop digital health solutions that address critical barriers to accessing healthcare services.
+              </p>
+              <p style="font-size: 16px; line-height: 1.6;">
+                We envision a future where the youth of Eswatini are equipped with the skills and knowledge to create impactful digital health solutions that improve healthcare outcomes. Your participation is vital in fostering innovation and entrepreneurship within the digital health sector.
+              </p>
+              <p style="font-size: 16px; line-height: 1.6;">
+                Should your team be successful, we will reach out to you via email with further details and next steps in the hackathon process.
+              </p>
+              <div style="text-align: center; margin: 20px 0;">
+                <img src="https://img.freepik.com/free-vector/medical-protective-shield-banner-background_1419-2191.jpg?w=1380&t=st=1673734162~exp=1673734762~hmac=5ff4319dd6564336bdb551ee7eeaf67066f26b0c2310e193de1c1ea33853db1c" alt="Hackathon Event" style="max-width: 300px; border-radius: 10px;">
+              </div>
+              <p style="font-size: 16px; line-height: 1.6; text-align: center;">
+                Please stay tuned for further updates regarding the next steps in the hackathon process. Thank you for your commitment to this mission; we look forward to seeing the innovative solutions you will create!
+              </p>
+              <p style="font-size: 16px; line-height: 1.6; text-align: center;">
+                Best regards, <br/>
+                <strong>Code for Care Hackathon Team</strong>
+              </p>
+              <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+              <p style="font-size: 12px; color: #888; text-align: center;">
+                If you have any questions, feel free to contact us at 
+                <a href="mailto:codeforcare@rstp.org.sz" style="color: #007bff;">codeforcare@rstp.org.sz</a>.
+              </p>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `,
+      });
+
+      console.log("Email sent successfully:", mailResponse);
+
+      res.status(201).json({
+        message: "Application sent successfully and email sent.",
+        user: result.rows[0],
+      });
+    } catch (mailError) {
+      console.error("Error sending email:", mailError);
+
+      res.status(201).json({
+        message: "Application sent successfully but email not sent.",
+        user: result.rows[0],
+        emailError: mailError.message,
+      });
+    }
+
     res.status(201).json(result.rows[0]); // Send back the created record
   } catch (error) {
     console.error("Error inserting data into applications table:", error);
@@ -318,15 +508,6 @@ app.put("/updateUser/:id", async (req, res) => {
     console.error("Error updating user:", error);
     res.status(500).json({ error: "Internal server error" });
   }
-});
-
-// Setup email transporter (configure with your email provider)
-const transporter = nodemailer.createTransport({
-  service: "Gmail",
-  auth: {
-    user: "khanyadlamini22@gmail.com",
-    pass: "giak jrxb qlnl kyhy",
-  },
 });
 
 app.post("/sendResetLink", async (req, res) => {
