@@ -118,9 +118,6 @@ app.post("/userRegister", async (req, res) => {
             <div style="background-color: white; padding: 20px; border-radius: 10px;">
               <h2 style="color: #007bff; text-align: center;">Congratulations!</h2>
               <p style="font-size: 16px; line-height: 1.6;">
-               Congratulations,
-              </p>
-              <p style="font-size: 16px; line-height: 1.6;">
                 You have successfully registred on the Digital Care Hackahon.
               </p>
               <p style="font-size: 16px; line-height: 1.6;">
