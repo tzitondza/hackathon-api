@@ -118,10 +118,10 @@ app.post("/userRegister", async (req, res) => {
             <div style="background-color: white; padding: 20px; border-radius: 10px;">
               <h2 style="color: #007bff; text-align: center;">Congratulations!</h2>
               <p style="font-size: 16px; line-height: 1.6;">
-                You have successfully registred on the Digital Care Hackahon.
+                You have successfully registered on the Digital Care Hackahon.
               </p>
               <p style="font-size: 16px; line-height: 1.6;">
-                Continue filling in the application form and be amongts the best tech innovators!
+                Continue filling in the application form and be amongst the best tech innovators!
               </p>
               
               <p style="font-size: 16px; line-height: 1.6; text-align: center;">
@@ -333,7 +333,7 @@ app.post("/Application", async (req, res) => {
     try {
       const mailResponse = await transporter.sendMail({
         from: "codeforcare@rstp.org.sz",
-        to: email,
+        to: user,
         subject: "Congratulations!",
         html: `
     <div style="font-family: Arial, sans-serif; color: #333;">
