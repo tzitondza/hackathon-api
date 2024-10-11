@@ -225,12 +225,6 @@ app.post("/sendResetLink", async (req, res) => {
                 <a href="${resetLink}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
               </p>
               <p style="font-size: 16px; line-height: 1.6;">
-                If the button doesn't work, you can copy and paste the following link into your browser:
-              </p>
-              <p style="font-size: 14px; word-break: break-all;">
-                ${resetLink}
-              </p>
-              <p style="font-size: 16px; line-height: 1.6;">
                 This link will expire in 1 hour for security reasons. If you need to reset your password after that, please request a new reset link.
               </p>
               <p style="font-size: 16px; line-height: 1.6; text-align: center;">
