@@ -192,7 +192,7 @@ app.post("/sendResetLink", async (req, res) => {
     );
 
     // Send email with reset link
-    const resetLink = `https://hackathon-api-r1ns.onrender.com/reset?token=${token}`;
+    const resetLink = `https://hackathon-7fce3.web.app/reset?token=${token}`;
     try {
       const mailResponse = await transporter.sendMail({
         from: "codeforcare@rstp.org.sz",
