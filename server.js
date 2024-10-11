@@ -118,10 +118,13 @@ app.post("/userRegister", async (req, res) => {
             <div style="background-color: white; padding: 20px; border-radius: 10px;">
               <h2 style="color: #007bff; text-align: center;">Congratulations!</h2>
               <p style="font-size: 16px; line-height: 1.6;">
-                You have successfully registered on the Digital Care Hackahon.
+               Congratulations,
               </p>
               <p style="font-size: 16px; line-height: 1.6;">
-                Continue filling in the application form and be amongst the best tech innovators!
+                You have successfully registred on the Digital Care Hackahon.
+              </p>
+              <p style="font-size: 16px; line-height: 1.6;">
+                Continue filling in the application form and be amongts the best tech innovators!
               </p>
               
               <p style="font-size: 16px; line-height: 1.6; text-align: center;">
@@ -163,6 +166,105 @@ app.post("/userRegister", async (req, res) => {
     console.error("Error inserting data:", error);
     // Send a generic error message for security
     res.status(500).json({ error: "Database insertion error" });
+  }
+});
+
+app.post("/sendResetLink", async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // Check if the email exists
+    const result = await pool.query("SELECT id FROM users WHERE email = $1", [
+      email,
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "Email not registered" });
+    }
+
+    const userId = result.rows[0].id;
+    const token = crypto.randomBytes(20).toString("hex");
+    console.log("I reach here...", token, userId);
+    // Store the token in the database with an expiration time
+    await pool.query(
+      "INSERT INTO password_resets (user_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL '1 hour')",
+      [userId, token]
+    );
+
+    // Send email with reset link
+    const resetLink = `https://hackathon-api-r1ns.onrender.com/reset?token=${token}`;
+    try {
+      const mailResponse = await transporter.sendMail({
+        from: "codeforcare@rstp.org.sz",
+        to: email,
+        subject: "Password Reset",
+        html: `
+    <div style="font-family: Arial, sans-serif; color: #333;">
+      <table style="width: 100%; background-color: #f5f5f5; padding: 20px;">
+        <tr>
+          <td align="center">
+           <img src="https://firebasestorage.googleapis.com/v0/b/hackathon-7fce3.appspot.com/o/New%20Pepfar%20logo.png?alt=media&token=4564e2b8-fe4c-484e-b241-8a94d0a5af43" alt="Hackathon Logo" style="max-width: 150px; margin-bottom: 20px;  margin-right:30px">
+            <img src="https://firebasestorage.googleapis.com/v0/b/hackathon-7fce3.appspot.com/o/CGHP_Social%20(1).jpg?alt=media&token=60b32285-c08d-4103-a328-df563d95215f" alt="Hackathon Logo" style="max-width: 150px; margin-bottom: 20px; margin-right:30px">
+            <img src="https://firebasestorage.googleapis.com/v0/b/hackathon-7fce3.appspot.com/o/logo%20(1).png?alt=media&token=9b2558c3-97eb-4d02-be0c-da4f5d28a7cf" alt="Hackathon Logo" style="max-width: 80px; margin-bottom: 20px;">
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div style="background-color: white; padding: 20px; border-radius: 10px;">
+              <h2 style="color: #007bff; text-align: center;">Password Reset</h2>
+              <p style="font-size: 16px; line-height: 1.6;">
+                Hello,
+              </p>
+              <p style="font-size: 16px; line-height: 1.6;">
+                We received a request to reset your password for the Digital Care Hackathon account. If you didn't make this request, you can ignore this email.
+              </p>
+              <p style="font-size: 16px; line-height: 1.6;">
+                To reset your password, please click the button below:
+              </p>
+              <p style="text-align: center;">
+                <a href="${resetLink}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
+              </p>
+              <p style="font-size: 16px; line-height: 1.6;">
+                If the button doesn't work, you can copy and paste the following link into your browser:
+              </p>
+              <p style="font-size: 14px; word-break: break-all;">
+                ${resetLink}
+              </p>
+              <p style="font-size: 16px; line-height: 1.6;">
+                This link will expire in 1 hour for security reasons. If you need to reset your password after that, please request a new reset link.
+              </p>
+              <p style="font-size: 16px; line-height: 1.6; text-align: center;">
+                Best regards, <br/>
+                <strong>Code for Care Hackathon Team</strong>
+              </p>
+              <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+              <p style="font-size: 12px; color: #888; text-align: center;">
+                If you have any questions, feel free to contact us at 
+                <a href="mailto:codeforcare@rstp.org.sz" style="color: #007bff;">codeforcare@rstp.org.sz</a>.
+              </p>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `,
+      });
+
+      console.log("Email sent successfully:", mailResponse);
+
+      res.status(200).json({
+        message: "Password reset link sent successfully.",
+      });
+    } catch (mailError) {
+      console.error("Error sending email:", mailError);
+      res.status(500).json({
+        message: "Error sending password reset email.",
+        emailError: mailError.message,
+      });
+    }
+  } catch (error) {
+    console.error("Error sending reset link:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -333,7 +435,7 @@ app.post("/Application", async (req, res) => {
     try {
       const mailResponse = await transporter.sendMail({
         from: "codeforcare@rstp.org.sz",
-        to: user,
+        to: email,
         subject: "Congratulations!",
         html: `
     <div style="font-family: Arial, sans-serif; color: #333;">
@@ -507,46 +609,46 @@ app.put("/updateUser/:id", async (req, res) => {
   }
 });
 
-app.post("/sendResetLink", async (req, res) => {
-  const { email } = req.body;
+// app.post("/sendResetLink", async (req, res) => {
+//   const { email } = req.body;
 
-  try {
-    // Check if the email exists
-    const result = await pool.query("SELECT id FROM users WHERE email = $1", [
-      email,
-    ]);
+//   try {
+//     // Check if the email exists
+//     const result = await pool.query("SELECT id FROM users WHERE email = $1", [
+//       email,
+//     ]);
 
-    if (result.rows.length === 0) {
-      return res.status(400).json({ error: "Email not registered" });
-    }
+//     if (result.rows.length === 0) {
+//       return res.status(400).json({ error: "Email not registered" });
+//     }
 
-    const userId = result.rows[0].id;
-    const token = crypto.randomBytes(20).toString("hex");
-    console.log("I reach here...", token, userId);
-    // Store the token in the database with an expiration time
-    await pool.query(
-      "INSERT INTO password_resets (user_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL '1 hour')",
-      [userId, token]
-    );
+//     const userId = result.rows[0].id;
+//     const token = crypto.randomBytes(20).toString("hex");
+//     console.log("I reach here...", token, userId);
+//     // Store the token in the database with an expiration time
+//     await pool.query(
+//       "INSERT INTO password_resets (user_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL '1 hour')",
+//       [userId, token]
+//     );
 
-    // Send email with reset link
-    const resetLink = `http://localhost:5173/reset/`;
-    await transporter.sendMail({
-      to: email,
-      subject: "Password Reset",
-      text: `You requested a password reset. Click the link to reset your password: ${resetLink}`,
-    });
+//     // Send email with reset link
+//     const resetLink = `http://localhost:5173/reset/`;
+//     await transporter.sendMail({
+//       to: email,
+//       subject: "Password Reset",
+//       text: `You requested a password reset. Click the link to reset your password: ${resetLink}`,
+//     });
 
-    res.status(200).json({ message: "Reset link sent" });
-  } catch (error) {
-    console.error("Error sending reset link:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+//     res.status(200).json({ message: "Reset link sent" });
+//   } catch (error) {
+//     console.error("Error sending reset link:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// });
 
-app.post("/resetPassword", async (req, res) => {
-  const { token, password } = req.body;
-  console.log("I reach here.....", token, password);
+app.post("/resetPassword/:token", async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
 
   try {
     // Validate token
