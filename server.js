@@ -270,7 +270,7 @@ app.post("/sendResetLink", async (req, res) => {
 
 app.get("/getEmails", async (req, res) => {
   try {
-    const result = await pool.query("SELECT email FROM userz");
+    const result = await pool.query("SELECT email FROM users");
     res.json(result.rows);
   } catch (error) {
     console.error("Error fetching emails:", error);
