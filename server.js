@@ -892,6 +892,73 @@ app.post("/getDocuments", async (req, res) => {
   }
 });
 
+app.get("/getGroups", async (req, res) => {
+  console.log("I reach here......");
+
+  try {
+    const result = await pool.query(`
+          SELECT id, email, team_name, team_members, experience, 
+                 previous_hackathons, previous_solutions, how_did_you_hear, 
+                 has_submitted, created_at 
+          FROM applications
+      `);
+
+    const groups = result.rows.map((group) => {
+      // Check if team_members is a string and needs to be parsed
+      const teamMembers =
+        typeof group.team_members === "string"
+          ? JSON.parse(group.team_members)
+          : group.team_members;
+
+      // Log the fully parsed team members for inspection
+      console.log("Parsed team_members:", JSON.stringify(teamMembers, null, 2));
+
+      return {
+        id: group.id,
+        email: group.email,
+        team_name: group.team_name,
+        team_members: teamMembers, // Include the parsed team_members here
+        experience: group.experience,
+        previous_hackathons: group.previous_hackathons,
+        previous_solutions: group.previous_solutions,
+        how_did_you_hear: group.how_did_you_hear,
+        has_submitted: group.has_submitted,
+        created_at: group.created_at,
+      };
+    });
+
+    res.json(groups);
+    console.log(groups);
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while fetching the groups" });
+  }
+});
+
+// Get user count
+app.get("/getUserCount", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT COUNT(*) FROM users");
+    res.json({ count: parseInt(result.rows[0].count) });
+  } catch (error) {
+    console.error("Error fetching user count:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Get team (application) count
+app.get("/getTeamCount", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT COUNT(*) FROM applications");
+    res.json({ count: parseInt(result.rows[0].count) });
+  } catch (error) {
+    console.error("Error fetching team count:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
