@@ -414,7 +414,7 @@ app.post("/userLogin", async (req, res) => {
 
     const user = result.rows[0];
     console.log("Stored hashed password:", user.password);
-
+    console.log("Stored role:", user.role);
     // Compare the provided password with the stored hashed password
     const isMatch = await bcrypt.compare(password, user.password);
     console.log("Password match result:", isMatch);
@@ -433,6 +433,7 @@ app.post("/userLogin", async (req, res) => {
         phone: user.phone,
         address_type: user.address_type,
         address: user.address,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -911,7 +912,7 @@ app.get("/getGroups", async (req, res) => {
           : group.team_members;
 
       // Log the fully parsed team members for inspection
-      console.log("Parsed team_members:", JSON.stringify(teamMembers, null, 2));
+      // console.log("Parsed team_members:", JSON.stringify(teamMembers, null, 2));
 
       return {
         id: group.id,
@@ -928,7 +929,7 @@ app.get("/getGroups", async (req, res) => {
     });
 
     res.json(groups);
-    console.log(groups);
+    // console.log(groups);
   } catch (error) {
     console.error("Error fetching groups:", error);
     res
